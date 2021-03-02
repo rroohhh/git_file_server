@@ -43,7 +43,11 @@ def return_versioned_path(commit, subpath=None):
             data = data[subpath]
         elif config.root_file is not None:
             if config.root_file in data:
-                return redirect(f"{commit}/{config.root_file}")
+                loc = f"{commit}/{config.root_file}"
+                redir = redirect(loc)
+                redir.headers['location'] = loc
+                redir.autocorrect_location_header = False
+                return redir
         if data.type == "blob":
             mimetype = guess_type(subpath)[0]
             if mimetype is None:
