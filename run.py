@@ -43,20 +43,20 @@ def return_versioned_path(commit, subpath=None):
             data = data[subpath]
         elif config.root_file is not None:
             if config.root_file in data:
-                return redirect(f"/commit/{commit}/{config.root_file}")
+                return redirect(f"{commit}/{config.root_file}")
         if data.type == "blob":
             mimetype = guess_type(subpath)[0]
             if mimetype is None:
                 mimetype = "text/plain;charset=UTF-8"
             return Response(data.data_stream.read(), mimetype=mimetype)
         elif config:
-            return '<br />'.join(f"<a href=/commit/{commit}/{entry.path}>{entry.path}</a>" for entry in data)
+            return '<br />'.join(f"<a href={entry.path}>{entry.path}</a>" for entry in data)
 
 
 @app.route('/commit')
 def return_commit_list():
     with lock:
-        return "<br />".join(f"<a href=/commit/{commit}><tt>{commit}</tt> {commit.message}</a>" for commit in repo.iter_commits(f"refs/remotes/origin/{config.branch}"))
+        return "<br />".join(f"<a href=commit/{commit}><tt>{commit}</tt> {commit.message}</a>" for commit in repo.iter_commits(f"refs/remotes/origin/{config.branch}"))
 
 
 @app.route(update_hook)
