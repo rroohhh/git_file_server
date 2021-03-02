@@ -1,0 +1,5 @@
+remote = 'https://github.com/apertus-open-source-cinema/nmigen-gateware'
+repo = './repo'
+branch = 'gh-pages'
+secret_file = '.secret'
+root_file = 'index.html'
