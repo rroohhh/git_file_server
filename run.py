@@ -1,6 +1,6 @@
 import secrets
 from git import Repo
-from flask import Flask, Response, redirect
+from flask import Flask, Response, redirect, abort
 from mimetypes import guess_type
 import threading
 import config
@@ -34,20 +34,37 @@ update_hook = f'/{gen_token(secret, "update")}'
 print("update endpoint:", update_hook)
 
 
-@app.route('/commit/<commit>')
-@app.route('/commit/<commit>/<path:subpath>')
-def return_versioned_path(commit, subpath=None):
+def local_redirect(loc):
+    redir = redirect(loc)
+    redir.headers['location'] = loc
+    redir.autocorrect_location_header = False
+    return redir
+
+def branch_ref():
+    return f"refs/remotes/origin/{config.branch}"
+
+@app.route('/')
+def root_latest_redirect():
+    return local_redirect('commit/latest')
+
+@app.route('/commit/<wanted_commit>/')
+@app.route('/commit/<wanted_commit>/<path:subpath>')
+def return_versioned_path(wanted_commit, subpath=None):
     with lock:
-        data = repo.commit(commit).tree
+        if wanted_commit == "latest":
+            commit = next(repo.iter_commits(branch_ref()))
+        else:
+            commit = repo.commit(wanted_commit)
+
+        data = commit.tree
         if subpath is not None:
-            data = data[subpath]
+            try:
+                data = data[subpath]
+            except KeyError:
+                abort(404)
         elif config.root_file is not None:
             if config.root_file in data:
-                loc = f"{commit}/{config.root_file}"
-                redir = redirect(loc)
-                redir.headers['location'] = loc
-                redir.autocorrect_location_header = False
-                return redir
+                return local_redirect(f"{config.root_file}")
         if data.type == "blob":
             mimetype = guess_type(subpath)[0]
             if mimetype is None:
@@ -57,10 +74,10 @@ def return_versioned_path(commit, subpath=None):
             return '<br />'.join(f"<a href={entry.path}>{entry.path}</a>" for entry in data)
 
 
-@app.route('/commit')
+@app.route('/commit/')
 def return_commit_list():
     with lock:
-        return "<br />".join(f"<a href=commit/{commit}><tt>{commit}</tt> {commit.message}</a>" for commit in repo.iter_commits(f"refs/remotes/origin/{config.branch}"))
+        return "<br />".join(f"<a href={commit}><tt>{commit}</tt> {commit.message}</a>" for commit in repo.iter_commits(branch_ref()))
 
 
 @app.route(update_hook)
