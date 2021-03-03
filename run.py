@@ -47,6 +47,10 @@ def branch_ref():
 def root_latest_redirect():
     return local_redirect('commit/latest')
 
+@app.route('/commit/<wanted_commit>')
+def commit_local_redirect(wanted_commit):
+    return local_redirect(f"{wanted_commit}/")
+
 @app.route('/commit/<wanted_commit>/')
 @app.route('/commit/<wanted_commit>/<path:subpath>')
 def return_versioned_path(wanted_commit, subpath=None):
@@ -73,6 +77,9 @@ def return_versioned_path(wanted_commit, subpath=None):
         elif config:
             return '<br />'.join(f"<a href={entry.path}>{entry.path}</a>" for entry in data)
 
+@app.route('/commit')
+def commitlist_local_redirect():
+    return local_redirect("commit/")
 
 @app.route('/commit/')
 def return_commit_list():
